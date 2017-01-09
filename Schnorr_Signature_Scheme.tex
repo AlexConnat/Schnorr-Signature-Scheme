@@ -1,0 +1,276 @@
+\documentclass{article}
+\usepackage[utf8]{inputenc}
+
+\title{Overview of the\\Schnorr Signature Scheme}
+\author{Alexandre Connat}
+\date{January, 2017}
+
+\usepackage{natbib}
+\usepackage{graphicx}
+\usepackage{amsmath}
+\usepackage{amssymb}
+
+\usepackage{titling}
+
+\setlength{\droptitle}{-10em} % To remove the very large margin on top of page
+
+
+\begin{document}
+
+\maketitle
+
+
+
+
+
+\section{Introduction}
+
+The Schnorr Signature Scheme, is a very simple cryptographic signature scheme, based on the hardness of the discrete logarithm problem. It is used notably in the Bictoin Protocol. \\
+In this document we used the multiplicative notation to describe all the operations performed on the group. But if we work in additive groups, like Elliptic Curves, we could easily draw a parallel with the additive notation.  \\
+
+\noindent
+The goal of this scheme is for a sender to be able to sign a message $M$ with a signature $S$. \\
+The sender wants to prove its identity and the authenticity of the message by sending the message $M$ alongside with the signature $S$, over a insecure channel. \\
+The receiver should be able to verify the signature with quasi-certainty.
+
+
+
+
+
+
+
+\section{Protocol}
+
+Both sender and receiver must agree on a group to perform all the following operations. In this document, we'll focus on the group $G = Z_p^*$ with $p$ a big prime number. \\
+
+\noindent
+We assume the sender has generated a key-pair (Private Key, Public Key) = ($x$, $y$) with $y = g^x$ mod $p$.
+We assume the receiver is able to access the Public Key $y$ of the sender.
+
+
+\subsection{Sender-Side:}
+
+Compute : \
+
+\begin{itemize}
+
+	\item $t = g^r$, \ where $r \in Z_p^*$ random
+
+	\item $e =$ Hash($M \| t$), \ where Hash() is any hash function (Sha1, Sha256, ...) and $\|$ is the 'append' sign
+
+	\item $s = r - x e$
+
+\end{itemize}
+
+$\Rightarrow$ The signature is $S = (s, e)$
+
+
+\subsection{Receiver-Side:}
+
+Compute : \
+
+\begin{itemize}
+
+	\item $l = g^s y^e$, \ with $s$ and $e$ from $S$, and $y$ the Public Key of the sender
+
+	\item $e_v =$ Hash($M \| l$)
+
+\end{itemize}
+
+$\Rightarrow$ The signature is considered as :
+	$
+    \left\{
+        \begin{array}{ll}
+        	\textsc{Valid} \ \ , \  \text{if } \ e_v = e \\
+        	\textsc{Invalid} \ \ , \  \text{if } \ e_v \neq e
+        \end{array}
+    \right.
+   	$
+
+
+
+
+
+
+
+\section{Proof - Correctness}
+
+If we consider a valid key-pair $(x,y)$, with $y = g^x$, we have :
+
+$$
+\begin{align*}
+l &= g^s \cdot y^e \\
+  &= g^{r - xe} \cdot (g^x)^e \\
+  &= g^r \cdot g^{-xe} \cdot g^{xe} \\
+  &= g^r \\
+  &= t
+\end{align*}
+$$
+
+\noindent
+Hence, we have Hash($M \| l$) $\equiv$ Hash($M \| t$) \
+
+\noindent
+Hence, we have $e_v \equiv e$
+
+
+
+
+
+\section{Error Probability}
+
+\begin{itemize}
+
+	\item if $e_v \neq e$, signature is $\textsc{Invalid}$ with probability $1$.
+
+	\item if $e_v = e$, signature is $\textsc{Valid}$ with probability $1 - \epsilon$. \ ($\epsilon \approx 0$ for large $p$)
+
+\end{itemize}
+
+
+
+
+
+
+
+
+\section{Proof - Error Probability}
+
+Assume the key-pair is invalid. Let's define a random $x' \neq x$, s.t: $y \neq g^{x'}$  \\
+
+\noindent
+We will prove that there are two possibilities to forge a signature : \\
+Either find the exact $x' = x$, which is the real Private Key (with probability $\frac{1}{|G|} = \frac{1}{p-1}$) or, by "chance" $e =$ Hash($M \| t$) is a multiple of $p$, and its reduction modulo $p$ is $0$ (with probability $\frac{1}{p}$). \\
+
+We receive a forged signature : 
+$S = (s', e) = (r - x'e, e)$ \\
+\indent
+We compute :
+$l = g^{s'} \cdot y^e = g^r \cdot g^{-x'e} \cdot g^{xe} = g^r \cdot g^{e(x - x')} \\
+
+
+$$
+\begin{align*}
+\Rightarrow Pr(l = g^r) = Pr(g^{e(x - x')} = 1) &= Pr(e = 0) + Pr(x = x') \\
+            &= \frac{1}{p} + \frac{1}{p-1} \approx \frac{2}{p} \underset{p\to +\infty}{\longrightarrow} 0
+\end{align*}
+$$
+
+
+
+
+
+
+\section{Implemented Protocol}
+
+To write the actual code, we worked with an Elliptic Curve $E$, instead of $\mathbb{Z}_p$ and the protocol we used to sign and verify messages slightly differs from what we explained in Part 2. \\
+
+\noindent
+We worked with the curve $Ed25199$, defined over the prime field $\mathbb{F}_q$, of prime order $q = 2^{255} - 19$ and a base point $G = (x, -4/5)$ \\ with $\ell = 2^{252} + 27742317777372353535851937790883648493$ the prime order of the base point. \\
+
+\noindent
+We used Sha256 as our Hash Function, which outputs the result as a 256-bit string, which is further reduced modulo $q$, to be used as a scalar value in the group. \\
+
+\noindent
+The key-pair is (Private Key, Public Key) = ($x$, $Y$), with $Y = x \cdot G$, the point obtained by multiplying the base point $G$ by the scalar $x$.
+
+
+
+\subsection{Sender-Side}
+
+Compute : \
+
+\begin{itemize}
+
+    \item $R = k \cdot G$ \ , \ $k \in \mathbb{Z}_\ell^*$ random
+    
+    \item $e =$ Hash($M \| R$) \ , \ $M$ the message, and "Hash" the Sha256 function
+
+    \item $s = k + xe$ \ , \ $x$ the private key of the sender
+
+\end{itemize}
+
+$\Rightarrow$ The signature is $S = (R, s)$
+
+
+
+\subsection{Receiver-Side}
+
+Compute : \
+
+\begin{itemize}
+
+  \item $e =$ Hash($M \| R$) \ , \ $M$ the message, and $R$ from the signature $S$
+
+  \item $sg_v = R + e \cdot Y$ \ , \ $Y$ the public key of the sender
+
+  \item $sg = s \cdot G$ \ , \ $s$ from the signature $S$
+
+\end{itemize}
+
+$\Rightarrow$ The signature is considered as :
+	$
+    \left\{
+        \begin{array}{ll}
+        	\textsc{Valid} \ \ , \  \text{if } \ sg_v = sg \\
+        	\textsc{Invalid} \ \ , \  \text{if } \ sg_v \neq sg
+        \end{array}
+    \right.
+  $
+
+
+
+\section{Implementation}
+
+We based our implementation on the Crypto library of the DEDIS laboratory (www.github.com/dedis/crypto) \\
+
+\noindent
+We used the cryptographic suite \verb|ed25519.NewAES128SHA256Ed25519()| \\
+
+\noindent
+Keys are generated using the method \verb|config.NewKeyPair()| \\
+\verb|keypair.Secret| is of type \verb|abstract.Scalar| \\
+\verb|keypair.Public| is of type \verb|abstract.Point| \\
+
+
+We provide 2 public methods to the user programmer :
+
+\begin{itemize}
+
+    \item \verb|SignMessage(m, x)|
+    which takes a message \verb|m| (of type \verb|string|), and a private key \verb|x| (of type \verb|abstract.Scalar|) as input, and outputs a signature \verb|S| (of type \verb|Signature|).
+
+    \item \verb|VerifySignature(m, S, Y)|
+    which takes a message \verb|m| (of type \verb|string|), a signature \verb|S| (of type \verb|Signature|), and a public key \verb|Y| (of type \verb|abstract.Point|) as input, and outputs a boolean value, representing whether the given signature is a $\textsc{Valid}$ signature (\verb|true|) or an $\textsc{Invalid}$ signature (\verb|false|) for the given message, with this public key. \\
+    (Alternatively, you can use the function \verb|Verify(m, Y)| directly on the Signature $S$ itself)
+
+\end{itemize}
+
+\noindent
+The signature itself is held in a custom type struct :
+\begin{verbatim}
+type Signature struct {
+    R abstract.Point
+    s abstract.Scalar
+}    
+\end{verbatim}
+
+
+
+
+
+\section{Testing}
+
+We tested the code with : \\
+- a valid key-pair, a valid signature, a valid message \\
+- valid message and signature, invalid keypair \\
+- valid keypair and signature, invalid message to verify \\
++ Marshaling/Unmarshaling
+
+ETC.... \\
+
+We tested corner cases and errors launching e.g Empty signature, invalid key-pair numbers, empty message to sign???? \\
+
+
+
+\end{document}
