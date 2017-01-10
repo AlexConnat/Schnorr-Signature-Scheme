@@ -124,13 +124,13 @@ func VerifySignature(m string, S Signature, Y abstract.Point) bool {
 	}
 	///////////////////////
 
-	concatMessage := m + S.R.String() // Gare au segault, si la Signature est vide (check, tests, etc...) comme en C!
+	concatMessage := m + S.R.String() // Append "m || R"
 
-	e := HashString(concatMessage)
+	e := HashString(concatMessage) // Hash(m || R)
 
 	sg_v := cryptoSuite.Point().Add(S.R, cryptoSuite.Point().Mul(Y, e)) // sg_v = S.R + e*Y
 
-	sg := cryptoSuite.Point().Mul(nil, S.s)
+	sg := cryptoSuite.Point().Mul(nil, S.s) // sg = s*G <-- The base point
 
 	return sg_v.Equal(sg)
 }
