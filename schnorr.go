@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/dedis/crypto/abstract"
-	"github.com/dedis/crypto/config"
 	"github.com/dedis/crypto/ed25519"
 	"github.com/dedis/crypto/random"
 )
@@ -79,7 +78,14 @@ OUTPUT:
 */
 func SignMessage(m string, x abstract.Scalar) Signature {
 
-	// Check arguments, m or x
+	// Argument Checking //
+	if (m == "") {
+		panic("Error! Cannot sign an empty string (security reasons)!")
+	}
+	if (x.Equal(cryptoSuite.Scalar().Zero())) {
+		panic("Error! Invalid private key x (=0)!")
+	}
+	///////////////////////
 
 	// Pick a random scalar in the group :
 	k := cryptoSuite.Scalar().Pick(random.Stream)
@@ -93,7 +99,6 @@ func SignMessage(m string, x abstract.Scalar) Signature {
 
 	S := Signature{R: R, s: s}
 	return S
-
 }
 
 /*
@@ -107,7 +112,17 @@ OUTPUT:
 */
 func VerifySignature(m string, S Signature, Y abstract.Point) bool {
 
-	// Check arguments, empty m, emty S.R or S.e, Y < 0
+	// Argument Checking //
+	if (m == "") {
+		panic("Error! Cannot verify an empty string (security reasons)!")
+	}
+	if (S.R == nil || S.s == nil || S.R.Equal(cryptoSuite.Point()) || S.s.Equal(cryptoSuite.Scalar())) {
+		panic("Error! Incomplete Signature!")
+	}
+	if (Y.Equal(cryptoSuite.Point().Null())) {
+		panic("Error! Invalid public key Y (=Neutral element)!")
+	}
+	///////////////////////
 
 	concatMessage := m + S.R.String() // Gare au segault, si la Signature est vide (check, tests, etc...) comme en C!
 
@@ -131,36 +146,4 @@ OUTPUT:
 */
 func (S Signature) Verify(m string, Y abstract.Point) bool {
 	return VerifySignature(m, S, Y)
-}
-
-/******************
-****** MAIN *******
-******************/
-
-func main() {
-
-	keyPair := config.NewKeyPair(cryptoSuite)
-	x := keyPair.Secret // type abstract.Scalar
-	Y := keyPair.Public // type abstract.Point ( = x*G <-- G the base point )
-
-	fmt.Printf("\n\n")
-
-	m := "Tropical"
-
-	S := SignMessage(m, x)
-	fmt.Println("Signature:", S)
-
-	check := VerifySignature(m, S, Y)
-	fmt.Println("check:", check)
-	check2 := S.Verify(m, Y)
-	fmt.Println("check2:", check2)
-
-	fmt.Printf("\n\n")
-
-	data, _ := S.MarshalBinary()
-
-	sig := Signature{R: cryptoSuite.Point().Base(), s: cryptoSuite.Scalar().SetInt64(123)} // Dummy sig
-	fmt.Println("sig before :", sig)
-	sig.UnmarshalBinary(data)
-	fmt.Println("sig after  :", sig)
 }
