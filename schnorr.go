@@ -79,10 +79,10 @@ OUTPUT:
 func SignMessage(m string, x abstract.Scalar) Signature {
 
 	// Argument Checking //
-	if (m == "") {
+	if m == "" {
 		panic("Error! Cannot sign an empty string (security reasons)!")
 	}
-	if (x.Equal(cryptoSuite.Scalar().Zero())) {
+	if x.Equal(cryptoSuite.Scalar().Zero()) {
 		panic("Error! Invalid private key x (=0)!")
 	}
 	///////////////////////
@@ -113,13 +113,13 @@ OUTPUT:
 func VerifySignature(m string, S Signature, Y abstract.Point) bool {
 
 	// Argument Checking //
-	if (m == "") {
+	if m == "" {
 		panic("Error! Cannot verify an empty string (security reasons)!")
 	}
-	if (S.R == nil || S.s == nil || S.R.Equal(cryptoSuite.Point()) || S.s.Equal(cryptoSuite.Scalar())) {
+	if S.R == nil || S.s == nil || S.R.Equal(cryptoSuite.Point()) || S.s.Equal(cryptoSuite.Scalar()) {
 		panic("Error! Incomplete Signature!")
 	}
-	if (Y.Equal(cryptoSuite.Point().Null())) {
+	if Y.Equal(cryptoSuite.Point().Null()) {
 		panic("Error! Invalid public key Y (=Neutral element)!")
 	}
 	///////////////////////

@@ -18,7 +18,7 @@ func TestSignatureAllGood(t *testing.T) {
 	S := SignMessage(m, x)
 	check := VerifySignature(m, S, Y)
 
-	if (check != true) {
+	if check != true {
 		t.Errorf("FATAL ERROR : Can't verify a message properly sign.")
 	}
 }
@@ -35,7 +35,7 @@ func TestSignMessageWithWrongKey(t *testing.T) {
 	S := SignMessage(m, x)
 	check := VerifySignature(m, S, Y)
 
-	if (check != false) {
+	if check != false {
 		t.Errorf("Error: Message was signed with wrong secret key, but verified with success!")
 	}
 }
@@ -52,7 +52,7 @@ func TestVerifySignatureWithWrongKey(t *testing.T) {
 	S := SignMessage(m, x)
 	check := VerifySignature(m, S, Y)
 
-	if (check != false) {
+	if check != false {
 		t.Errorf("Error: Message was properly signed, and verified with the wrong key with success!")
 	}
 }
@@ -69,7 +69,7 @@ func TestVerifySignatureOnWrongMessage(t *testing.T) {
 	S := SignMessage(m, x)
 	check := S.Verify(m2, Y)
 
-	if (check != false) {
+	if check != false {
 		t.Errorf("Error: Signature of the message m was verified with success upon another message!")
 	}
 }
@@ -138,13 +138,13 @@ func TestVerifyAnIncompleteSignature(t *testing.T) {
 
 	m := "message"
 
-	S := Signature{R:cryptoSuite.Point(), s:cryptoSuite.Scalar()}
+	S := Signature{R: cryptoSuite.Point(), s: cryptoSuite.Scalar()}
 	VerifySignature(m, S, Y)
 
-	S2 := Signature{R:cryptoSuite.Point().Base()}
+	S2 := Signature{R: cryptoSuite.Point().Base()}
 	VerifySignature(m, S2, Y)
 
-	S3 := Signature{s:cryptoSuite.Scalar().SetInt64(123)}
+	S3 := Signature{s: cryptoSuite.Scalar().SetInt64(123)}
 	VerifySignature(m, S3, Y)
 
 	S4 := Signature{}
@@ -153,7 +153,7 @@ func TestVerifyAnIncompleteSignature(t *testing.T) {
 
 func ExampleSignature_String() {
 
-	S := Signature{R:cryptoSuite.Point().Base(), s:cryptoSuite.Scalar().SetInt64(123)}
+	S := Signature{R: cryptoSuite.Point().Base(), s: cryptoSuite.Scalar().SetInt64(123)}
 
 	fmt.Println(S)
 	// Output: (R=5866666666666666666666666666666666666666666666666666666666666666, s=7b)
@@ -161,7 +161,7 @@ func ExampleSignature_String() {
 
 func ExampleSignature_MarshalBinary() {
 
-	S := Signature{R:cryptoSuite.Point().Base(), s:cryptoSuite.Scalar().SetInt64(44)}
+	S := Signature{R: cryptoSuite.Point().Base(), s: cryptoSuite.Scalar().SetInt64(44)}
 
 	data, _ := S.MarshalBinary()
 	fmt.Println(data)
@@ -171,9 +171,9 @@ func ExampleSignature_MarshalBinary() {
 
 func ExampleSignature_UnmarshalBinary() {
 
-	S := Signature{R:cryptoSuite.Point().Base(), s:cryptoSuite.Scalar().SetInt64(44)}
+	S := Signature{R: cryptoSuite.Point().Base(), s: cryptoSuite.Scalar().SetInt64(44)}
 
-	data := []byte{88,102,102,102,102,102,102,102,102,102,102,102,102,102,102,102,102,102,102,102,102,102,102,102,102,102,102,102,102,102,102,102,44,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0}
+	data := []byte{88, 102, 102, 102, 102, 102, 102, 102, 102, 102, 102, 102, 102, 102, 102, 102, 102, 102, 102, 102, 102, 102, 102, 102, 102, 102, 102, 102, 102, 102, 102, 102, 44, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
 
 	sig := Signature{cryptoSuite.Point(), cryptoSuite.Scalar().SetInt64(0)}
 	sig.UnmarshalBinary(data)
