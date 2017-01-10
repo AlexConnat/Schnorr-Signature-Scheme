@@ -262,15 +262,19 @@ type Signature struct {
 \section{Testing}
 
 We tested the code with : \\
-- a valid key-pair, a valid signature, a valid message \\
-- valid message and signature, invalid keypair \\
-- valid keypair and signature, invalid message to verify \\
-+ Marshaling/Unmarshaling
+- a valid key-pair, a valid message, a valid signature \\
+- a valid message, a valid signature, an invalid key-pair \\
+- a valid valid key-pair, a valid signature, an invalid message to verify \\
 
-ETC.... \\
+\noindent
+We also tested if the code raised exceptions when those events occurred : \\
+- empty message to sign or verify \\
+- empty or partially empty signature (missing $R$ or $s$) \\
+- private key equals to zero \\
+- public key equals to the neutral element \\
 
-We tested corner cases and errors launching e.g Empty signature, invalid key-pair numbers, empty message to sign???? \\
-
+\noindent
+And finally we tested the String representation of the Signature struct, as well as its Binary Marshaling and Unmarshaling functions.
 
 
 \end{document}
