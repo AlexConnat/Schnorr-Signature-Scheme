@@ -12,37 +12,38 @@ import (
 var cryptoSuite = ed25519.NewAES128SHA256Ed25519(false)
 var hashFunction = cryptoSuite.Hash()
 
+// Signature struct holds the actual signature object
 type Signature struct {
 	R abstract.Point
 	s abstract.Scalar
 }
 
-// Implement the BinaryMarshaler interface :
+// MarshalBinary implements the BinaryMarshaler interface :
 func (S *Signature) MarshalBinary() ([]byte, error) {
 
 	// Use the MarshalBinary() implementation of abstract.Scalar and abstract.Point
-	bytes_R, _ := S.R.MarshalBinary()
-	bytes_s, _ := S.s.MarshalBinary()
+	bytesR, _ := S.R.MarshalBinary()
+	bytess, _ := S.s.MarshalBinary()
 
 	// Append the byte-slice of R to the byte-slice of s and returns it
-	bytes_Rs := append(bytes_R, bytes_s...)
+	bytesRs := append(bytesR, bytess...)
 
-	return bytes_Rs, nil
+	return bytesRs, nil
 
 }
 
-// Implement the BinaryUnmarshaler interface :
+// UnmarshalBinary implements the BinaryUnmarshaler interface :
 func (S *Signature) UnmarshalBinary(data []byte) error {
 
 	// Retrieve the first half of the byte-slice which is the byte-slice of R
 	// And the second half which is the byte-slice of s
 	n := len(data)
-	bytes_R := data[:n/2]
-	bytes_s := data[n/2:]
+	bytesR := data[:n/2]
+	bytess := data[n/2:]
 
 	// Use the UnmarshalBinary() implementation of abstract.Scalar and abstract.Point
-	S.R.UnmarshalBinary(bytes_R)
-	S.s.UnmarshalBinary(bytes_s)
+	S.R.UnmarshalBinary(bytesR)
+	S.s.UnmarshalBinary(bytess)
 
 	return nil
 }
@@ -53,7 +54,7 @@ func (S Signature) String() string {
 }
 
 /*
-Hash a string s and returns its scalar representation in the group
+HashString hashes a string s and returns its scalar representation in the group
 INPUT:
   s - the string to be hashed
 OUTPUT:
@@ -69,7 +70,7 @@ func HashString(s string) abstract.Scalar {
 }
 
 /*
-Sign a message m with the private key x, and returns the Signature S=(R,s)
+SignMessage signs a message m with the private key x, and returns the Signature S=(R,s)
 INPUT:
   m - the message to be signed
   x - the private key of the signer
@@ -102,7 +103,8 @@ func SignMessage(m string, x abstract.Scalar) Signature {
 }
 
 /*
-Verify the signature S of a message m with the public key Y, and returns whether the signature is Valid or not
+VerifySignature verifies the signature S of a message m with the public key Y,
+and returns whether the signature is Valid or not
 INPUT:
   m - the message to be authenticated
   S - the signature of the message
@@ -128,11 +130,11 @@ func VerifySignature(m string, S Signature, Y abstract.Point) bool {
 
 	e := HashString(concatMessage) // Hash(m || R)
 
-	sg_v := cryptoSuite.Point().Add(S.R, cryptoSuite.Point().Mul(Y, e)) // sg_v = S.R + e*Y
+	sgv := cryptoSuite.Point().Add(S.R, cryptoSuite.Point().Mul(Y, e)) // sgv = S.R + e*Y
 
 	sg := cryptoSuite.Point().Mul(nil, S.s) // sg = s*G <-- The base point
 
-	return sg_v.Equal(sg)
+	return sgv.Equal(sg)
 }
 
 /*
